@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+<meta charset="utf-8">
+<title>Chord Tools</title>
+<style type="text/css">
+#mainContent {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: large;
+	font-weight: bold;
+	background-color: #E3F0FB;
+	border-radius: 4px;
+	padding: 10px;
+	text-align: center;
+}
+#resultContent {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: xx-large;
+	font-weight: bold;
+	background-color: #3e0fbf;
+	color: #f0f0f0;
+	border-radius: 4px;
+	padding: 10px;
+	text-align: center;
+	height: 10em;
+}
+.buttonStyle {
+	border-radius: 4px;
+	border: thin solid #F0E020;
+	padding: 5px;
+	background-color: #F8F094;
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+	font-weight: bold;
+	color: #663300;
+	width: 150px;
+}
+
+.buttonStyle:hover {
+	border: thin solid #FFCC00;
+	background-color: #FCF9D6;
+	color: #996633;
+	cursor: pointer;
+}
+.buttonStyle:active {
+	border: thin solid #99CC00;
+	background-color: #F5FFD2;
+	color: #669900;
+	cursor: pointer;
+}
+.chordProgression {
+	border-radius: 1px;
+	border: thin solid #f0e020;
+	height: 7em;
+	width: 30em
+}
+.keyboardProgression {
+	background-color: #0f0f0f;
+	color: #f0f0f0;
+	width:80%;
+	height:16em;
+	font-family: Consolas;
+	font-size: normal;
+	padding: 10px;
+}
+.digiKeysMode {
+	font-size: small;
+	font-family: normal;
+}
+
+</style>
+</head>
+
+<body>
+<div id="mainContent">
+<p id="helloText">Enter chord progression separated by space</p>
+	<div>
+		<textarea id="chordProgression" class="chordProgression">[HotelCalifornia]
+[Verse]
+Bm F# A E G D Em F#
+[Chorus]
+Bm F# A E G Em F#</textarea>
+	</div>
+	<div class="digiKeysMode">
+		<input type="checkbox" id="digiKeysMode" name="digiKeysMode" value="No" /> Digi Keys Mode
+	</div>
+	<button id="clickButton" class="buttonStyle">To Keyboard Progression</button>
+</div>
+<div id="resultContent">
+	<textarea id="keyboardProgression" class="keyboardProgression" readonly>
+	</textarea>
+</div>
+<script> 
+var myButton = document.getElementById("clickButton");
+var myText = document.getElementById("helloText");
+var chordProgression = document.getElementById("chordProgression");
+var keyboardProgression = document.getElementById("keyboardProgression");
+var digiKeyMode = document.getElementById("digiKeysMode");
+
+myButton.addEventListener('click', writeKeyboardProgression, false);
+
+var MChords = {
+	// MAJOR (Inversions supported in code)
+	"C":	"C E G",
+	"C#":	"C+ F G+", 	//
+	"Db":	"C+ F G+", 	//
+	"D":	"D F+ A",
+	"D#":	"D+ G A+", 	//
+	"Eb":	"D+ G A+", 	//
+	"E":	"E G+ B",
+	"F":	"F A C",
+	"F#":	"F+ A+ C+", //
+	"Gb":	"F+ A+ C+", //
+	"G":	"G B D",
+	"G#":	"G+ C D+", 	//
+	"Ab":	"G+ C D+", 	//
+	"A":	"A C+ E",
+	"A#":	"A+ D F", 	//
+	"Bb":	"A+ D F", 	//
+	"B":	"B D+ F+",
+	// MINOR
+	"Cm":	"C D+ G",
+	"C#m":	"C+ E G+", 	//
+	"Dbm":	"C+ E G+", 	//
+	"Dm":	"D F A",
+	"D#m":	"D+ F+ A+", 	//
+	"Ebm":	"D+ F+ A+", 	//
+	"Em":	"E G B",
+	"Fm":	"F G+ C",
+	"F#m":	"F+ A C+", 	//
+	"Gbm":	"F+ A C+", 	//
+	"Gm":	"G A+ D",
+	"G#m":	"G+ B D+", 	//
+	"Abm":	"G+ B D+", 	//
+	"Am":	"A C E",
+	"A#m":	"A+ C+ F", 	//
+	"Bbm":	"A+ C+ F", 	//
+	"Bm":	"B D F+",
+	// SUS4
+	"Csus4":	"C F G",
+	"C#sus4":	"C+ F+ G+", 	//
+	"Dbsus4":	"C+ F+ G+", 	//
+	"Dsus4":	"D G A",
+	"D#sus4":	"D+ G+ A+", 	//
+	"Ebsus4":	"D+ G+ A+", 	//
+	"Esus4":	"E A B",
+	"Fsus4":	"F A+ C",
+	"F#sus4":	"F+ B C+", 	//
+	"Gbsus4":	"F+ B C+", 	//
+	"Gsus4":	"G C D",
+	"G#sus4":	"G+ C+ D+", 	//
+	"Absus4":	"G+ C+ D+", 	//
+	"Asus4":	"A D E",
+	"A#sus4":	"A+ D+ F", 	//
+	"Bbsus4":	"A+ D+ F", 	//
+	"Bsus4":	"B E F+",
+	// MINOR 6TH
+	"Cm6":	"C E G A",
+	"C#m6":	"C+ F G+ A+", 	//
+	"Dbm6":	"C+ F G+ A+", 	//
+	"Dm6":	"D F+ A B",
+	"D#m6":	"D+ G A+ C", 	//
+	"Ebm6":	"D+ G A+ C", 	//
+	"Em6":	"E G+ B C+",
+	"Fm6":	"F A C D",
+	"F#m6":	"F+ A+ C+ D+", 	//
+	"Gbm6":	"F+ A+ C+ D+", 	//
+	"Gm6":	"G B D E",
+	"G#m6":	"G+ C D+ F", 	//
+	"Abm6":	"G+ C D+ F", 	//
+	"Am6":	"A C+ E F+",
+	"A#m6":	"A+ D F G", 	//
+	"Bbm6":	"A+ D F G", 	//
+	"Bm6":	"B D+ F+ G+",
+	// 7TH
+	"C7":	"C E G A+",
+	"C#7":	"C+ F G+ B", 	//
+	"Db7":	"C+ F G+ B", 	//
+	"D7":	"D F+ A C",
+	"D#7":	"D+ G A+ C+", 	//
+	"Eb7":	"D+ G A+ C+", 	//
+	"E7":	"E G+ B D",
+	"F7":	"F A C D+",
+	"F#7":	"F+ A+ C+ E", //
+	"Gb7":	"F+ A+ C+ E", //
+	"G7":	"G B D F",
+	"G#7":	"G+ C D+ F+", 	//
+	"Ab7":	"G+ C D+ F+", 	//
+	"A7":	"A C+ E G",
+	"A#7":	"A+ D F G+", 	//
+	"Bb7":	"A+ D F G+", 	//
+	"B7":	"B D+ F+ A",
+	// MAJOR 7TH
+	"Cmaj7":	"C E G B",
+	"C#maj7":	"C+ F G+ C", 	//
+	"Dbmaj7":	"C+ F G+ C", 	//
+	"Dmaj7":	"D F+ A C+",
+	"D#maj7":	"D+ G A+ D", 	//
+	"Ebmaj7":	"D+ G A+ D", 	//
+	"Emaj7":	"E G+ B D+",
+	"Fmaj7":	"F A C E",
+	"F#maj7":	"F+ A+ C+ F", 	//
+	"Gbmaj7":	"F+ A+ C+ F", 	//
+	"Gmaj7":	"G B D F+",
+	"G#maj7":	"G+ C D+ G", 	//
+	"Abmaj7":	"G+ C D+ G", 	//
+	"Amaj7":	"A C+ E G+",
+	"A#maj7":	"A+ D F G+", 	//
+	"Bbmaj7":	"B D+ F+ A+", 	//
+	"Bmaj7":	"B D+ F+ A+",
+	// MINOR 7TH
+	"Cm7":	"C D+ G A+",
+	"C#m7":	"C+ E G+ B", 	//
+	"Dbm7":	"C+ E G+ B", 	//
+	"Dm7":	"D F A C",
+	"D#m7":	"D+ F+ A+ C+", 	//
+	"Ebm7":	"D+ F+ A+ C+", 	//
+	"Em7":	"E G B D",
+	"Fm7":	"F G+ C D+",
+	"F#m7":	"F+ A C+ E", 	//
+	"Gbm7":	"F+ A C+ E", 	//
+	"Gm7":	"G A+ D F",
+	"G#m7":	"G+ B D+ F+", 	//
+	"Abm7":	"G+ B D+ F+", 	//
+	"Am7":	"A C E G",
+	"A#m7":	"A+ C+ F G+", 	//
+	"Bbm7":	"A+ C+ F G+", 	//
+	"Bm7":	"B D F+ A",
+	// SPECIAL INVERSIONS
+	"A/Ab": "C+ E G+ A", // La over La bemol
+	"D/G#": "G+ A D F+", // D/G# add(b5)
+};
+
+var KNums = {
+	"C":	0,
+	"C#":	1,	//
+	"C+":	1,	//
+	"D":	2,
+	"D#":	3,	//
+	"D+":	3,	//
+	"E":	4,	
+	"F":	5,
+	"F#":	6,	//
+	"F+":   6,	//
+	"G":	7,
+	"G#":	8,	//
+	"G+":	8,	//
+	"A":	9,	
+	"A#":	10,	//
+	"A+":	10,	//
+	"B":	11,	
+};
+
+var KKeys = {
+	"C":	["Z","Q"],
+	"C#":	["S","2"],	//
+	"C+":	["S","2"],	//
+	"D":	["X","W"],
+	"D#":	["D","3"],	//
+	"D+":	["D","3"],	//
+	"E":	["C","E"],	
+	"F":	["V","R"],
+	"F#":	["G","5"],	//
+	"F+":   ["G","5"],	//
+	"G":	["B","T"],
+	"G#":	["H","6"],	//
+	"G+":	["H","6"],	//
+	"A":	["N","Y"],	
+	"A#":	["J","7"],	//
+	"A+":	["J","7"],	//
+	"B":	["M","U"],
+};
+
+var MKeyToKKey = {
+	"C": "C",
+	"C#": "C+",
+	"Db": "C+",
+	"D": "D",
+	"D#": "D+",
+	"Eb": "D+",
+	"E": "E",
+	"F": "F",
+	"F#": "F+",
+	"Gb": "F+",
+	"G": "G",
+	"G#": "G+",
+	"Ab": "G+",
+	"A": "A",
+	"A#": "A+",
+	"Bb": "A+",
+	"B": "B",
+};
+
+function writeKeyboardProgression() {
+	keyboardProgression.value = "";
+	console.log("Here we go");
+	var chord_text = chordProgression.value.trim();
+	var chords = chord_text.split(/[\s,]+/);
+	console.log("Chords count: " + chords.length.toString());
+	var keyChords = [];
+	var keyChordsDigi = [];
+	var spaced_str = false;
+	for(var c in chords) {
+		console.log("Chord: " + chords[c]);
+		var lidx = chords[c].length - 1;
+		// Push titles as they are
+		if(chords[c][0] == '[' || chords[c][0] == '(' || chords[c][0] == '{') {
+			if(chords[c][0] == '[' && c > 0) {
+				keyChords.push("\n");
+				keyChordsDigi.push("\n");
+			}
+			keyChords.push(chords[c]);
+			keyChordsDigi.push(chords[c]);
+			if(chords[c][lidx] != ']' && chords[c][lidx] != ')' && chords[c][lidx] != '}') {
+				spaced_str = true;
+				console.log("SPACED_STR_START " + chords[c][lidx]);
+			} else {
+				keyChords.push("\n");
+				keyChordsDigi.push("\n");
+			}
+			continue;
+		} else if(spaced_str) {
+			keyChords.push(" " + chords[c]);
+			keyChordsDigi.push(" " + chords[c]);
+			if(chords[c][lidx] == ']' || chords[c][lidx] == ')' || chords[c][lidx] == '}') {
+				spaced_str = false;
+				console.log("SPACED_STR_END");
+				keyChords.push("\n");
+				keyChordsDigi.push("\n");
+			}
+			continue;
+		} else {
+			var note_str = "";
+			var note_comb = [];
+			if(chords[c].includes("/")) {
+				// Inversion
+				var sc = chords[c].split("/");
+				var ch = sc[0]; // Chord
+				var inv = MKeyToKKey[sc[1]]; // Inversion key
+				var mch = MChords[sc[0]]; // Musical chord string ex: "C D E"
+				// Check for no inversion key (could cause an infinite loop) 
+				if(mch.indexOf(inv) == -1) {
+					if(MChords.hasOwnProperty(chords[c])) {
+						// special inversion
+						mch = MChords[chords[c]];
+					} else {
+						keyChords.push("ERROR_BAD_INVERSION ");
+						keyChordsDigi.push("ERROR_BAD_INVERSION ");
+						continue;
+					}
+				}
+				note_comb = mch.split(" ");// ----> Split as: ["C", "D", "E"]
+				var s = '';
+				while(s !== inv) {
+					s = note_comb.pop();
+					note_comb.unshift(s);
+				}
+			} else {
+				note_str = MChords[chords[c]];
+				if(!note_str) {
+					console.log("Note String not defined! chords[c] = " + chords[c]);
+				}
+				note_comb = note_str.split(" ");
+			}
+			var cur_kval = 0;
+			var octave = 0;
+			for(var i in note_comb) {
+				if(KNums[note_comb[i]] < cur_kval) {
+					octave = 1;
+				}
+				keyChords.push(KKeys[note_comb[i]][octave]);
+				keyChordsDigi.push(note_comb[i]);
+				cur_kval = KNums[note_comb[i]];
+			}
+			keyChordsDigi.push("  ");
+			keyChords.push("  ");
+		}
+	}
+	var out = "";
+	for(var i in keyChords) {
+		if(!digiKeyMode.checked) {
+			out += keyChords[i];
+		} else {
+			out += keyChordsDigi[i];
+		}
+	}
+	keyboardProgression.value = out;
+}
+</script>
+
+<div>
+	<h3>Hotel California - Eagles</h3>
+	<pre>
+[Verse1]
+MW5  (On a dark desert highway)
+GJ2  (cool wind in my hair)
+N2E  (Warm smell of colitas)
+CHM  (rising up through the air)
+BMW  (Up ahead in the distance)
+XGN  (I saw a shimmering light)
+CBM  (My head grew heavy and my sight grew dim)
+GJ2  (I had to stop for the night)
+MW5  (There she stood in the doorway)
+GJ2  (I heard the mission bell)
+N2E  (And I was thinking to myself this could be)
+CHM  (heaven or this could be hell)
+BMW  (Then she lit up a candle)
+XGN  (and she showed me the way)
+CBM  (There were voices down the corridor)
+GJ2  (I thought I heard them say)
+
+[Chorus]
+BMW  (Welcome to the Hotel)
+XGN  (California Such a)
+CBM  (lovely place such a)
+MW5Y  (lovely face)
+BMW  (Plenty of room at the Hotel)
+XGN  (California)
+CBM  (Any time of year any time of year you)
+GJ2  (can find it here)
+
+[Verse2]
+MW5  (Her mind is Tiffany-twisted)
+GJ2  (she got the Mercedes bends)
+N2E  (She got a lot of pretty)
+CHM  (pretty boys she calls friends)
+BMW  (How they dance in the courtyard)
+XGN  (sweet summer sweat)
+CBM  (Some dance to remember some dance to forget)
+MW5  (So I called up the Captain)
+GJ2  ('Please bring me my wine')
+N2E  (He said 'We haven't had that spirit here)
+CHM  (since nineteen sixty nine')
+BMW  (And still those voices are)
+XGN  (calling from far away)
+CBM  (Wake you up in the middle of the night)
+GJ2  (Just to hear them say...)
+	</pre>
+	<pre>
+[Verse]
+
+[1]
+MW5  GJ2  N2E  CHM  BMW  XGN  CBM  GJ2  
+[2]
+MW5  GJ2  N2E  CHM  BMW  XGN  CBM  GJ2  
+[Chorus]
+BMW  XGN  CBM  MW5Y  BMW  XGN  CBM  GJ2  
+[Verse]
+
+[1]
+MW5  GJ2  N2E  CHM  BMW  XGN  CBM  
+[2]
+MW5  GJ2  N2E  CHM  BMW  XGN  CBM  GJ2  
+[Chorus]
+BMW  XGN  CBM  MW5Y  BMW  XGN  CBM  GJ2  
+	</pre>
+	<h3>Something About Us - Daft Punk</h3>
+	<pre>
+[1]
+M357  NQET  XVNQ  BMW  M357  NQET  XVNQ  BMW  
+[2]
+M357  NQET  XVNQ  BMW  M357  NQET  XVNQ  BMW  
+[3]
+JWR  NQET  XVNQ  BMW  
+	</pre>
+	<h3>Nothing To Lose - Michael Learns to Rock</h3>
+	<div>
+		<pre>
+[Verse 1:]
+(There are) D# (times when you) Bb (make me laugh) Cm
+(there are) G# (moments when you drive me) Bbsus4 (mad) Bb (2)
+(there are) D# (seconds when I) Bb (see the light) Cm
+(though) G# (many times you made me cry) Gsus4 G
+(There's) Cm (something) F  (you) Bb (don't understand) D#
+(I) Cm (want to) F (be your man) Bb
+
+[Chorus:]
+D# (Nothing to lose)
+Bb (your love to win) Cm
+Fm (hoping so bad that) D# (you'll let me in) Bb
+D# (I'm at your feet)
+Bb (waiting for you) Cm
+(I've got) G#m6 (time and) Bbsus4 (nothing to) D# (lose) Bb
+		</pre>
+		<pre>
+[Verse 1:]
+(There are)
+DBJ  (times when you)
+JWR  (make me laugh)
+ZDB  (there are)
+HQ3  (moments when you drive me)
+J3R  (mad)
+JWR  (2)
+(there are)
+DBJ  (seconds when I)
+JWR  (see the light)
+ZDB  (though)
+HQ3  (many times you made me cry)
+BQW  BMW  (There's)
+ZDB  (something)
+VNQ  (you)
+JWR  (don't understand)
+DBJ  (I)
+ZDB  (want to)
+VNQ  (be your man)
+JWR  
+[Chorus:]
+DBJ  (Nothing to lose)
+JWR  (your love to win)
+ZDB  VHQ  (hoping so bad that)
+DBJ  (you'll let me in)
+JWR  DBJ  (I'm at your feet)
+JWR  (waiting for you)
+ZDB  (I've got)
+HQ3R  (time and)
+J3R  (nothing to)
+DBJ  (lose)
+JWR
+		</pre>
+	</div>
+	<pre>
+[Verse1]
+DBJ  JWR  ZDB  HQ3  J3R  JWR  DBJ  JWR  ZDB  HQ3  BQW  BMW  ZDB  VNQ  JWR  DBJ  ZDB  VNQ  JWR  
+[Chorus]
+DBJ  JWR  ZDB  VHQ  DBJ  JWR  DBJ  JWR  ZDB  HQ3R  J3R  DBJ  JWR  
+[Verse2]
+DBJ  JWR  ZDB  HQ3  J3R  JWR  JWR  DBJ  JWR  ZDB  HQ3  BQW  BMW  ZDB  VNQ  JWR  DBJ  ZDB  VNQ  JWR  
+[Chorus]
+M35  SVH  GJ2  HQ3R  HQ3R  JWR  DGJ  M35  SVH  GJ2  M35  
+	</pre>
+	<h3>Someone Like You</h3>
+	<pre>
+[Intro]
+N2E  HN2E  GN2  XGN  
+[Verse1]
+N2E  HN2E  GN2  XGN  (3)
+
+[Bridge1]
+CHM  GN2  XGN  CHM  GN2  XGN  CHM  XGN  
+[Chorus1]
+N2E  CHM  GN2  XGN  (5)
+
+[Verse2]
+N2E  HN2E  GN2  XGN  (2)
+
+[Bridge2]
+CHM  GN2  XGN  CHM  (2)
+XGN  HNW5  
+[Chorus2]
+N2E  CHM  GN2  XGN  (4)
+
+[Break]
+CHM  GN2  XGN  MW5  SCH  XGN  HNW5  
+[Chorus3]
+N2E  CHM  GN2  XGN  (4)
+
+[Outro]
+N2E  CHM  GN2  XGN  (6)
+	</pre>
+</div>
+
+</body>
+</html>
